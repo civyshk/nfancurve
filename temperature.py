@@ -5,10 +5,10 @@ import sys
 from time import sleep
 
 # Points in the curve: temperature ºC, fan speed %
-curve = [(0, 0), (20, 0), (40, 40), (60, 75), (100, 100)]  # edit this list of points, don't use same temperature twice
+curve = [(0, 0), (40, 0), (50, 40), (60, 75), (100, 100)]  # edit this list of points
 sleepTime = 10
 
-def getFanSpeed(t):
+def getTargetFanSpeed(t):
     temperaturePoints = [x for x, y in curve]
     leftPoint = -1
     for i in range(len(temperaturePoints)):
@@ -26,15 +26,39 @@ def getFanSpeed(t):
         t1 = temperaturePoints[leftPoint + 1]
         s0 = curve[leftPoint][1]
         s1 = curve[leftPoint + 1][1]
+        if t0 == t1:
+            return s1
         a = (s1 - s0) / (t1 - t0)
         b = (t1 * s0 - t0 * s1) / (t1 - t0)
         s = a * t + b
         return int(s)
 
+def getCoreTemp():
+    return getAttribute("gpu:0", "GPUCoreTemp")
+
+def getCurrentFanSpeed():
+    return getAttribute("fan:0", "GPUCurrentFanSpeed")
+
+def getCurrentFanSpeedRPM():
+    return getAttribute("fan:0", "GPUCurrentFanSpeedRPM")
+
+def getAttribute(target, attribute):
+    output = str(subprocess.check_output(["nvidia-settings", "-q=[" + target + "]/" + attribute],
+                                         stderr=subprocess.DEVNULL,
+                                         universal_newlines=True))
+
+    positionStart = output.find(target) + len(target) + 4
+    positionEnd = output.find(".", positionStart)
+    integerAttribute = int(output[positionStart:positionEnd])
+    return integerAttribute
+
+def setTargetFanSpeed(speed):
+    subprocess.call(["nvidia-settings", "-a",
+                     "[fan:0]/GPUTargetFanSpeed=" + str(speed)],
+                    stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+
 def enableCoolBits():
-    output = subprocess.check_output(["nvidia-settings", "-a", '[gpu:0]/GPUFanControlState=1'],
-                                     stderr=subprocess.DEVNULL,
-                                     universal_newlines=True)
+    output = setAttribute("gpu:0", "GPUFanControlState", 1)
     position0 = output.find("assigned value")
     positionStart = position0 + 15
     positionEnd = output[positionStart:].find(".") + positionStart
@@ -52,8 +76,12 @@ def enableCoolBits():
         return False
 
 def finish():
-    subprocess.check_output(["nvidia-settings", "-a", '[gpu:0]/GPUFanControlState=0'],
-                            stderr=subprocess.DEVNULL, universal_newlines=True)
+    print(" Reset fan speed to auto mode")
+    setAttribute("gpu:0", "GPUFanControlState", 0)
+
+def setAttribute(target, attribute, value):
+    return str(subprocess.check_output(["nvidia-settings", "-a", "[%s]/%s=%d" % (target, attribute, value)],
+                            stderr=subprocess.DEVNULL, universal_newlines=True))
 
 def main():
     if len(curve) <= 0:
@@ -63,21 +91,22 @@ def main():
     if not enableCoolBits():
         sys.exit(1)
 
+    targetFanSpeedOld = getCurrentFanSpeed()
     while True:
-        output = str(subprocess.check_output(["nvidia-settings", "-q=[gpu:0]/GPUCoreTemp"],
-                                             stderr=subprocess.DEVNULL,
-                                             universal_newlines=True))
+        coreTemp = getCoreTemp()
+        targetFanSpeed = getTargetFanSpeed(coreTemp)
+        rpm = getCurrentFanSpeedRPM()
+        info = "GPU temperature is %dºC; fan is spinning at %4d RPM." % (coreTemp, rpm)
+        if targetFanSpeed != targetFanSpeedOld:
+            if targetFanSpeed > targetFanSpeedOld:
+                info += " Increasing "
+            else:
+                info += " Decreasing "
+            info += "speed from %d%% to %d%%" % (targetFanSpeedOld, targetFanSpeed)
+            setTargetFanSpeed(targetFanSpeed)
+            targetFanSpeedOld = targetFanSpeed
 
-        position0 = output.find("'GPUCoreTemp' is an integer attribute")
-        positionStart = output[:position0].rfind(":") + 2
-        positionEnd = output[positionStart:].find(".") + positionStart
-        currentTemperature = int(output[positionStart:positionEnd])
-        desiredFanSpeed = getFanSpeed(currentTemperature)
-        print("GPU temperature is %dºC: set fan at %d%%"
-              % (currentTemperature, desiredFanSpeed))
-        subprocess.call(["nvidia-settings", "-a",
-                         "[fan:0]/GPUTargetFanSpeed=" + str(desiredFanSpeed)],
-                        stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        print(info)
         sleep(sleepTime)
 
 if __name__ == "__main__":
