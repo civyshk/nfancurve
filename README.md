@@ -12,3 +12,5 @@ being the numbers in parenthesis pairs of (temperature ºC, fan speed %)
 ```bash
 $ python3 temperature.py
 ```
+## Example:
+[![nvidiascreen.png](https://s23.postimg.org/ynt7mw5ej/nvidiascreen.png)](https://postimg.org/image/et760rq6v/)
