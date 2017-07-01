@@ -19,7 +19,7 @@ def getTargetFanSpeed(t):
 
     if leftPoint < 0:
         return curve[0][1]
-    elif leftPoint >= len(temperaturePoints):
+    elif leftPoint >= len(temperaturePoints) - 1:
         return curve[-1][1]
     else:
         t0 = temperaturePoints[leftPoint]
@@ -83,6 +83,30 @@ def setAttribute(target, attribute, value):
     return str(subprocess.check_output(["nvidia-settings", "-a", "[%s]/%s=%d" % (target, attribute, value)],
                             stderr=subprocess.DEVNULL, universal_newlines=True))
 
+def getLineGraph(value, min, max, width, unit, direction):
+    if width <= 0:
+        return ""
+    elif max - min == 0:
+        return ""
+
+    rightArrow = "-> "
+    leftArrow = "<- "
+    dot = "."
+    label = " %d%s %s" % (value, unit, rightArrow if direction == 1 else leftArrow if direction == -1 else "")
+
+    a = width/(max - min)
+    b = -width*min/(max - min)
+    x = int(a*value + b)
+
+    result = "|"
+    result += dot * x
+    result += label
+    result += dot * (width - x - len(label))
+    if len(result) <= (width + 1):
+        result += "|"
+
+    return result
+
 def main():
     if len(curve) <= 0:
         print("User-defined curve is empty. Exit now")
@@ -97,15 +121,16 @@ def main():
         targetFanSpeed = getTargetFanSpeed(coreTemp)
         rpm = getCurrentFanSpeedRPM()
         info = "GPU temperature is %dºC; fan is spinning at %4d RPM." % (coreTemp, rpm)
+        direction = 0
         if targetFanSpeed != targetFanSpeedOld:
             if targetFanSpeed > targetFanSpeedOld:
-                info += " Increasing "
+                direction = 1
             else:
-                info += " Decreasing "
-            info += "speed from %d%% to %d%%" % (targetFanSpeedOld, targetFanSpeed)
+                direction = -1
             setTargetFanSpeed(targetFanSpeed)
             targetFanSpeedOld = targetFanSpeed
 
+        info += " " + getLineGraph(targetFanSpeed, 0, 100, 50, "%", direction)
         print(info)
         sleep(sleepTime)
 
