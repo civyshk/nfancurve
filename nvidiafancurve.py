@@ -9,7 +9,6 @@ curve = [(0, 0), (40, 0), (50, 40), (60, 75), (100, 100)]  # edit this list of p
 sleepTime = 10
 
 def getTargetFanSpeed(t):
-    temperaturePoints = [x for x, y in curve]
     """
     Interpolates a fan speed given a temperature, and using the global curve
     :param t: temperature
@@ -18,8 +17,8 @@ def getTargetFanSpeed(t):
 
     # Find the place where the temperature is in the curve. t will be between leftPoint and leftPoint + 1
     leftPoint = -1
-    for i in range(len(temperaturePoints)):
-        if t >= temperaturePoints[i]:
+    for i in range(len(curve)):
+        if t >= curve[i][0]:
             leftPoint = i
         else:
             break
@@ -27,12 +26,12 @@ def getTargetFanSpeed(t):
     # Points outside the curve use a flat extrapolation, just use the speed of the first or last point
     if leftPoint < 0:
         return curve[0][1]
-    elif leftPoint >= len(temperaturePoints) - 1:
+    elif leftPoint >= len(curve) - 1:
         return curve[-1][1]
     else:
-        t0 = temperaturePoints[leftPoint]
-        t1 = temperaturePoints[leftPoint + 1]
         # Between two points in the curve, the interpolation is linear
+        t0 = curve[leftPoint][0]
+        t1 = curve[leftPoint + 1][0]
         s0 = curve[leftPoint][1]
         s1 = curve[leftPoint + 1][1]
         if t0 == t1:
