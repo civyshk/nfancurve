@@ -10,6 +10,13 @@ sleepTime = 10
 
 def getTargetFanSpeed(t):
     temperaturePoints = [x for x, y in curve]
+    """
+    Interpolates a fan speed given a temperature, and using the global curve
+    :param t: temperature
+    :return: the desired fan speed for that temperature
+    """
+
+    # Find the place where the temperature is in the curve. t will be between leftPoint and leftPoint + 1
     leftPoint = -1
     for i in range(len(temperaturePoints)):
         if t >= temperaturePoints[i]:
@@ -17,6 +24,7 @@ def getTargetFanSpeed(t):
         else:
             break
 
+    # Points outside the curve use a flat extrapolation, just use the speed of the first or last point
     if leftPoint < 0:
         return curve[0][1]
     elif leftPoint >= len(temperaturePoints) - 1:
@@ -24,6 +32,7 @@ def getTargetFanSpeed(t):
     else:
         t0 = temperaturePoints[leftPoint]
         t1 = temperaturePoints[leftPoint + 1]
+        # Between two points in the curve, the interpolation is linear
         s0 = curve[leftPoint][1]
         s1 = curve[leftPoint + 1][1]
         if t0 == t1:
@@ -84,6 +93,16 @@ def setAttribute(target, attribute, value):
                             stderr=subprocess.DEVNULL, universal_newlines=True))
 
 def getLineGraph(value, min, max, width, unit, direction):
+    """
+Build a row for a vertical graph
+    :param value: Current value for this row
+    :param min: Min allowed value in the graph.
+    :param max: Max allowed value in the graph
+    :param width: Width of the graph measured in console characters
+    :param unit: String to be printed next to the value
+    :param direction: 1, -1 or 0 to also print an arrow pointing to the right, left or no arrow at all
+    :return: The row to be printed
+    """
     if width <= 0:
         return ""
     elif max - min == 0:
@@ -120,7 +139,7 @@ def main():
         coreTemp = getCoreTemp()
         targetFanSpeed = getTargetFanSpeed(coreTemp)
         rpm = getCurrentFanSpeedRPM()
-        info = "GPU temperature is %dºC; fan is spinning at %4d RPM." % (coreTemp, rpm)
+        info = "GPU temp is %dºC; fan spins at %4d RPM " % (coreTemp, rpm)
         direction = 0
         if targetFanSpeed != targetFanSpeedOld:
             if targetFanSpeed > targetFanSpeedOld:
