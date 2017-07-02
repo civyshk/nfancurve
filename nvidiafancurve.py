@@ -6,7 +6,11 @@ from time import sleep
 
 # Points in the curve: temperature ºC, fan speed %
 curve = [(0, 0), (40, 0), (50, 40), (60, 75), (100, 100)]  # edit this list of points
-sleepTime = 10
+sleepTime = 10  # s
+
+dopingEnabled = True
+dopingThreshold = 10  # ºC
+dopingSpeed = 10
 
 def getTargetFanSpeed(t):
     """
@@ -133,10 +137,14 @@ def main():
     if not enableCoolBits():
         sys.exit(1)
 
+    previousCoreTemp = 0
     targetFanSpeedOld = getCurrentFanSpeed()
     while True:
         coreTemp = getCoreTemp()
         targetFanSpeed = getTargetFanSpeed(coreTemp)
+        if dopingEnabled and coreTemp >= previousCoreTemp + dopingThreshold:
+            targetFanSpeed = min(targetFanSpeed + dopingSpeed, 100)
+        previousCoreTemp = coreTemp
         rpm = getCurrentFanSpeedRPM()
         info = "GPU temp is %dºC; fan spins at %4d RPM " % (coreTemp, rpm)
         direction = 0
