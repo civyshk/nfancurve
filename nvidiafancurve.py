@@ -6,6 +6,9 @@ from time import sleep
 
 # Points in the curve: temperature ºC, fan speed %
 curve = [(0, 0), (40, 0), (50, 40), (60, 75), (100, 100)]  # edit this list of points
+curveParamA = []  # To be filled
+curveParamB = []
+
 sleepTime = 10  # s
 
 dopingEnabled = True
@@ -32,18 +35,13 @@ def getTargetFanSpeed(t):
         return curve[0][1]
     elif leftPoint >= len(curve) - 1:
         return curve[-1][1]
-    else:
-        # Between two points in the curve, the interpolation is linear
-        t0 = curve[leftPoint][0]
-        t1 = curve[leftPoint + 1][0]
-        s0 = curve[leftPoint][1]
-        s1 = curve[leftPoint + 1][1]
-        if t0 == t1:
-            return s1
-        a = (s1 - s0) / (t1 - t0)
-        b = (t1 * s0 - t0 * s1) / (t1 - t0)
-        s = a * t + b
-        return int(s)
+
+    # Use linear interpolation between points in the curve
+    if curveParamA[leftPoint] is not None:
+        return int(curveParamA[leftPoint] * t + curveParamB[leftPoint])
+
+    # Unless the curve there is a vertical line
+    return curve[leftPoint + 1][1]
 
 def getCoreTemp():
     return getAttribute("gpu:0", "GPUCoreTemp")
@@ -137,6 +135,22 @@ def main():
 
     if not enableFanControl():
         sys.exit(1)
+
+    # Between two points in the curve, the interpolation is linear
+    # Cache the linear params here for later use
+    for i in range(len(curve) - 1):
+        t0 = curve[i][0]
+        t1 = curve[i + 1][0]
+        s0 = curve[i][1]
+        s1 = curve[i + 1][1]
+        if t0 == t1:
+            print("Warning: There are two speeds defined for the same temperature (%d ºC)" % t0)
+            print("Not critical but check your curve points\n")
+            curveParamA.append(None)
+            curveParamB.append(None)
+        else:
+            curveParamA.append((s1 - s0) / (t1 - t0))
+            curveParamB.append((t1 * s0 - t0 * s1) / (t1 - t0))
 
     previousCoreTemp = 0
     targetFanSpeedOld = getCurrentFanSpeed()
