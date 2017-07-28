@@ -69,7 +69,7 @@ def setTargetFanSpeed(speed):
                      "[fan:0]/GPUTargetFanSpeed=" + str(speed)],
                     stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
-def enableCoolBits():
+def enableFanControl():
     output = setAttribute("gpu:0", "GPUFanControlState", 1)
     position0 = output.find("assigned value")
     positionStart = position0 + 15
@@ -84,10 +84,11 @@ def enableCoolBits():
     if value == 1:
         return True
     else:
-        print("Couldn't enable CoolBits. Output: " + output)
+        print("Couldn't enable FanControl. Output: " + output)
+        print("Is Coolbits option enabled in /etc/X11/xorg.conf?")
         return False
 
-def finish():
+def disableFanControl():
     print(" Reset fan speed to auto mode")
     setAttribute("gpu:0", "GPUFanControlState", 0)
 
@@ -134,7 +135,7 @@ def main():
         print("User-defined curve is empty. Exit now")
         sys.exit(1)
 
-    if not enableCoolBits():
+    if not enableFanControl():
         sys.exit(1)
 
     previousCoreTemp = 0
@@ -164,5 +165,5 @@ if __name__ == "__main__":
     try:
         main()
     finally:
-        finish()
+        disableFanControl()
         sys.exit(0)
