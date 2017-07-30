@@ -133,6 +133,7 @@ def main():
         print("User-defined curve is empty. Exit now")
         sys.exit(1)
 
+
     if not enableFanControl():
         sys.exit(1)
 
@@ -176,8 +177,13 @@ def main():
         sleep(sleepTime)
 
 if __name__ == "__main__":
+    fanControlEnabledAtStart = False
     try:
+        fanControlEnabledAtStart = getAttribute("gpu:0", "GPUFanControlState") == 1
         main()
     finally:
-        disableFanControl()
+        if not fanControlEnabledAtStart:
+            disableFanControl()
+        else:
+            print(" Don't reset fan speed to auto mode, it was enabled before")
         sys.exit(0)
