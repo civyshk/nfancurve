@@ -137,9 +137,16 @@ Build a row for a vertical graph
 
     return result
 
+def safeSpeed(s):
+    return min(max(s, 0), 100)
+
 def main():
+    global curve
+
     if not enableFanControl():
         sys.exit(1)
+
+    curve = [(t, safeSpeed(s)) for t, s in curve]
 
     # Between two points in the curve, the interpolation is linear
     # Cache the linear params here for later use
@@ -163,7 +170,7 @@ def main():
         coreTemp = getCoreTemp()
         targetFanSpeed = getTargetFanSpeed(coreTemp)
         if dopingEnabled and coreTemp >= previousCoreTemp + dopingThreshold:
-            targetFanSpeed = min(targetFanSpeed + dopingSpeed, 100)
+            targetFanSpeed = safeSpeed(targetFanSpeed + dopingSpeed)
         previousCoreTemp = coreTemp
         rpm = getCurrentFanSpeedRPM()
         info = "GPU temp is %dºC; fan spins at %4d RPM " % (coreTemp, rpm)
