@@ -15,6 +15,8 @@ dopingEnabled = True
 dopingThreshold = 10  # ºC
 dopingSpeed = 10
 
+minVersion = 304
+
 def getTargetFanSpeed(t):
     """
     Interpolates a fan speed given a temperature, and using the global curve
@@ -40,8 +42,9 @@ def getTargetFanSpeed(t):
     if curveParamA[leftPoint] is not None:
         return int(curveParamA[leftPoint] * t + curveParamB[leftPoint])
 
-    # Unless the curve there is a vertical line
-    return curve[leftPoint + 1][1]
+    # Unless the curve at that point is a vertical line
+    else:
+        return curve[leftPoint + 1][1]
 
 def getCoreTemp():
     return getAttribute("gpu:0", "GPUCoreTemp")
@@ -61,6 +64,13 @@ def getAttribute(target, attribute):
     positionEnd = output.find(".", positionStart)
     integerAttribute = int(output[positionStart:positionEnd])
     return integerAttribute
+
+def getVersion():
+    output = str(subprocess.check_output(["nvidia-settings", "-v"], stderr=subprocess.DEVNULL, universal_newlines=True))
+    positionStart = output.find("version") + len("version ")
+    positionEnd = output[positionStart:].find(".") + positionStart
+    version = int(output[positionStart:positionEnd])
+    return version
 
 def setTargetFanSpeed(speed):
     subprocess.call(["nvidia-settings", "-a",
@@ -87,7 +97,6 @@ def enableFanControl():
         return False
 
 def disableFanControl():
-    print(" Reset fan speed to auto mode")
     setAttribute("gpu:0", "GPUFanControlState", 0)
 
 def setAttribute(target, attribute, value):
@@ -129,11 +138,6 @@ Build a row for a vertical graph
     return result
 
 def main():
-    if len(curve) <= 0:
-        print("User-defined curve is empty. Exit now")
-        sys.exit(1)
-
-
     if not enableFanControl():
         sys.exit(1)
 
@@ -177,12 +181,21 @@ def main():
         sleep(sleepTime)
 
 if __name__ == "__main__":
-    fanControlEnabledAtStart = False
+    fanControlEnabledAtStart = getAttribute("gpu:0", "GPUFanControlState") == 1
+
+    if len(curve) <= 0:
+        print("User-defined curve is empty. Exit now")
+        sys.exit(1)
+
+    if getVersion() < minVersion:
+        print("Nvidia drivers are outdated, use at least version %d. Exit now" % minVersion)
+        sys.exit(1)
+
     try:
-        fanControlEnabledAtStart = getAttribute("gpu:0", "GPUFanControlState") == 1
         main()
     finally:
         if not fanControlEnabledAtStart:
+            print(" Reset fan speed to auto mode")
             disableFanControl()
         else:
             print(" Don't reset fan speed to auto mode, it was enabled before")
