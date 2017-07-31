@@ -9,10 +9,10 @@ curve = [(0, 0), (40, 0), (50, 40), (60, 75), (100, 100)]  # edit this list of p
 curveParamA = []  # To be filled
 curveParamB = []
 
-sleepTime = 10  # s
+maxSleepTime = 10  # s
 
 dopingEnabled = True
-dopingThreshold = 10  # ºC
+warningTemperatureChange = 10  # ºC
 dopingSpeed = 10
 
 minVersion = 304
@@ -45,6 +45,25 @@ def getTargetFanSpeed(t):
     # Unless the curve at that point is a vertical line
     else:
         return curve[leftPoint + 1][1]
+
+def getSleepTime(previousTemp, currentTemp):
+    """
+    The more different are the temperatures, the shorter is the sleep time
+    I'm using the negative parabola 'sleep = a + b * ΔT^2' ,
+    being sleep=maxSpeepTime when ΔT==0
+    and sleep=1 when AT=warningTemperatureChange
+    :param previousTemp:
+    :param currentTemp:
+    :return: the recommended sleep time
+    """
+
+    deltaTemperature = abs(previousTemp - currentTemp)
+    if deltaTemperature >= warningTemperatureChange:
+        return 1
+
+    a = maxSleepTime
+    b = (1 - maxSleepTime)/warningTemperatureChange
+    return a + b * deltaTemperature ** 2
 
 def getCoreTemp():
     return getAttribute("gpu:0", "GPUCoreTemp")
@@ -169,11 +188,12 @@ def main():
     while True:
         coreTemp = getCoreTemp()
         targetFanSpeed = getTargetFanSpeed(coreTemp)
-        if dopingEnabled and coreTemp >= previousCoreTemp + dopingThreshold:
+        if dopingEnabled and coreTemp >= previousCoreTemp + warningTemperatureChange + 1:
             targetFanSpeed = safeSpeed(targetFanSpeed + dopingSpeed)
+        sleepTime = getSleepTime(previousCoreTemp, coreTemp)
         previousCoreTemp = coreTemp
         rpm = getCurrentFanSpeedRPM()
-        info = "GPU temp is %dºC; fan spins at %4d RPM " % (coreTemp, rpm)
+        info = "GPU temp is %dºC; fan spins at %4d RPM. Sleep %2ds " % (coreTemp, rpm, round(sleepTime))
         direction = 0
         if targetFanSpeed != targetFanSpeedOld:
             if targetFanSpeed > targetFanSpeedOld:
@@ -200,6 +220,8 @@ if __name__ == "__main__":
 
     try:
         main()
+    except Exception as e:
+        print(e)
     finally:
         if not fanControlEnabledAtStart:
             print(" Reset fan speed to auto mode")
