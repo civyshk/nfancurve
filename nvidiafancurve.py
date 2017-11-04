@@ -63,7 +63,7 @@ def getSleepTime(previousTemp, currentTemp):
 
     a = maxSleepTime
     b = (1 - maxSleepTime)/warningTemperatureChange
-    return a + b * deltaTemperature ** 2
+    return max(a + b * deltaTemperature ** 2, 1)
 
 def getCoreTemp():
     return getAttribute("gpu:0", "GPUCoreTemp")
