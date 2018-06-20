@@ -1,0 +1,71 @@
+nvidia-settings -q gpus
+6 GPUs on madan:0
+
+    [0] madan:0[gpu:0] (GeForce GTX 1070)
+
+      Has the following names:
+        GPU-0
+        GPU-a2abac8b-4e4c-9973-72b7-6de414e3e6fa
+
+    [1] madan:0[gpu:1] (GeForce GTX 1070)
+
+      Has the following names:
+        GPU-1
+        GPU-909827fb-4c14-fd05-db00-ceb2f584c7e3
+
+    [2] madan:0[gpu:2] (GeForce GTX 1070)
+
+      Has the following names:
+        GPU-2
+        GPU-6cb7b538-db2d-2e8e-3fd2-621668366d09
+
+    [3] madan:0[gpu:3] (GeForce GTX 1070)
+
+      Has the following names:
+        GPU-3
+        GPU-63d02891-f60f-5f04-cefc-b9f7c7702dde
+
+    [4] madan:0[gpu:4] (GeForce GTX 1070)
+
+      Has the following names:
+        GPU-4
+        GPU-58acc987-4765-7920-a95e-b1c56a455b1a
+
+    [5] madan:0[gpu:5] (GeForce GTX 1070)
+
+      Has the following names:
+        GPU-5
+        GPU-9d639787-f681-1247-8c71-adcf62e5ab17
+
+nvidia-settings -q fans
+6 Fans on madan:0
+
+    [0] madan:0[fan:0] (Fan 0)
+
+      Has the following name:
+        FAN-0
+
+    [1] madan:0[fan:1] (Fan 1)
+
+      Has the following name:
+        FAN-1
+
+    [2] madan:0[fan:2] (Fan 2)
+
+      Has the following name:
+        FAN-2
+
+    [3] madan:0[fan:3] (Fan 3)
+
+      Has the following name:
+        FAN-3
+
+    [4] madan:0[fan:4] (Fan 4)
+
+      Has the following name:
+        FAN-4
+
+    [5] madan:0[fan:5] (Fan 5)
+
+      Has the following name:
+        FAN-5
