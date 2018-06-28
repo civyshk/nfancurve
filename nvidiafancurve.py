@@ -158,7 +158,7 @@ class NvidiaManager:
             # # Unused
             # positionFriendlyName = line.find("Has the following name")
             if positionIndex >= 0:
-                positionOne = line.find(" ", positionIndex)  # [0] LSD:0[gpu:0] (GeForce foo)
+                positionOne = line.find(" ", positionIndex)    # [0] LSD:0[gpu:0] (GeForce foo)
                 positionTwo = line.find(" ", positionOne + 1)  # 0  1            2             length
 
                 gpuIndex = int(line[positionIndex + 1: positionOne - 1])
