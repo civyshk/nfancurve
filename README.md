@@ -26,7 +26,7 @@ The number in Coolbits can be anything over 4, but the man page of nvidia-xconfi
 says that
 > "For fan control set it to 4.  WARNING: this may cause system damage and void warranties."
 
-So you know. Let it be 4 and don't blame me if the card starts burning.
+So you know. Let it be 4 and don't blame me if the card starts to burn.
 
 **3.**
 Open temperature.py with your favourite editor and edit the curve like this:
